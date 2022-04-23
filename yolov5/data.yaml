@@ -1,6 +1,0 @@
-path: ../data
-train: train/images
-val: valid/images
-
-nc: 5
-names: ['Ambulance', 'Bus', 'Car', 'Motorcycle', 'Truck']
