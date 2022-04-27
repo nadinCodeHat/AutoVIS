@@ -4,20 +4,27 @@ import numpy as np
 from models.experimental import attempt_load
 from utils.general import non_max_suppression
 
+#Check if device has cuda -> then use GPU else use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class OBJ_DETECTION():
     def __init__(self, model_path, classes):
+        #Initialize the classes
         self.classes = classes
+        #Provide weights path
         self.yolo_model = attempt_load(weights=model_path, map_location=device)
         self.input_width = 320
 
-    def detect(self,main_img):
+    def detect(self,main_img): #main_img is the frame image passed from main.py
+        #Get image width and hieght (".shape[:2]" tuple unpacking, with it you extract the rows and columns values from the shape tuple)
         height, width = main_img.shape[:2]
+        #Resize the image height
         new_height = int((((self.input_width/width)*height)//32)*32)
-
+        #Resize image to new width and height
         img = cv2.resize(main_img, (self.input_width,new_height))
+        #Color to RGB
         img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+        #Move axes of an array to new positions
         img = np.moveaxis(img,-1,0)
         img = torch.from_numpy(img).to(device)
         img = img.float()/255.0  # 0 - 255 to 0.0 - 1.0
