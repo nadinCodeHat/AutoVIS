@@ -1,8 +1,9 @@
 import cv2
 import imutils
+import deskew as ds
 
 # Read the image
-image = cv2.imread("./samples/image16.PNG")
+image = cv2.imread("./samples/image3.PNG")
 
 # Resize to width 500
 image = imutils.resize(image, width=500)
@@ -81,8 +82,16 @@ if lp_detected == True:
     cv2.imshow("Image with detected license plate", image)
     cv2.waitKey(0)
 
-    # Show cropped LP
-    Cropped_loc = './croppedimages/7.png'
-    cv2.imshow("Cropped License Plate", cv2.imread(Cropped_loc))
-    cv2.waitKey(0)
+# Show cropped LP
+cropped_img = cv2.imread('./croppedimages/7.png')
+cv2.imshow("Cropped License Plate", cropped_img)
+cv2.waitKey(0)
+
+# Deskew the cropped LP
+corrected_img = ds.deskew(cropped_img)
+cv2.imshow("Corrected image", corrected_img)
+cv2.waitKey(0)
+cv2.imwrite('C:\\Users\\LENOVO\\Documents\\Projects\\AutoVIS\\croppedimages\\'
+            + '8.png', corrected_img)
+
 cv2.destroyAllWindows()
