@@ -1,72 +1,88 @@
 import cv2
+import imutils
 
-# Create a VideoCapture object and read from input file
-cap = cv2.VideoCapture('./samples/video.mp4')
-#cap = cv2.resize(cap, (frameWidth, frameHeight))
-# Object detection from stable camera
-object_detector = cv2.createBackgroundSubtractorMOG2(
-    history=100, varThreshold=80)
+# Read the image
+image = cv2.imread("./samples/image16.PNG")
 
-# Check if camera opened successfully
-if (cap.isOpened() == False):
-    print("Error opening video stream or file")
+# Resize to width 500
+image = imutils.resize(image, width=500)
 
-already_saved = False
-# Read until video is completed
-while(cap.isOpened()):
-    # Capture frame-by-frame
-    ret, frame = cap.read()
-    #height, width, _ = frame.shape
-    #print(height, width)
+# Show original image
+cv2.imshow("Original image", image)
+cv2.waitKey(0)
 
-    if ret == True:
+# Convert image from RGB to Gray Scale
+gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+cv2.imshow("Gray Scaled image", gray_image)
+cv2.waitKey(0)
 
-        # Extract region of interest
-        roi = frame[400: 700, 500: 1400]
+# Bilateral filter removes noise while keeping edges sharp
+gray_image = cv2.bilateralFilter(gray_image, 11, 17, 17)
+cv2.imshow("Smoothened image (Bilateral Filter)", gray_image)
+cv2.waitKey(0)
 
-        mask = object_detector.apply(roi)
-        _, mask = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+# Find edges using canny detector
+edged_image = cv2.Canny(gray_image, 170, 200)
+cv2.imshow("Canny Edged image", edged_image)
+cv2.waitKey(0)
 
-        detections = []
+# Find contours based on edges
+cnts, new = cv2.findContours(
+    edged_image.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        for cnt in contours:
-            # Calculate area and remove small elements
-            area = cv2.contourArea(cnt)
-            if area > 100:
-                # cv2.drawContours(roi, [cnt], -1, (0, 255, 0), 1)
-                x, y, w, h = cv2.boundingRect(cnt)
-                cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
+# Create copy of original image to draw all contours
+image_new = image.copy()
+cv2.drawContours(image_new, cnts, -1, (0, 255, 0), 3)
+cv2.imshow("All Contours", image_new)
+cv2.waitKey(0)
 
-                detections.append([x, y, w, h])
-                if detections and already_saved == False:
-                    already_saved = True
-                    #cv2.imwrite("frame.png", frame)
-                    cv2.imwrite('C:\\Users\\LENOVO\\Documents\\Projects\\AutoVIS\\croppedimages\\' +
-                                'frame.png', roi)
-                    print("Hello")
-                else:
-                    print("Detections are empty or frame already saved")
+# sort contours based on their area keeping minimum required area as '30' (anything smaller than this will not be considered)
+cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:30]
 
-        print(detections)
-        # Display the resulting frame
-        # cv2.resize(frame, (frameWidth, frameHeight)))
-        cv2.imshow('Video Frame', frame)
-        cv2.imshow('roi', roi)
-        # cv2.resize(mask, (frameWidth, frameHeight)))
-        cv2.imshow('Mask', mask)
-    else:
-        print('no video')
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        continue
-    # Press Q on keyboard to  exit
-    if cv2.waitKey(5) & 0xFF == ord('q'):
+# Top 30 Contours
+image2 = image.copy()
+cv2.drawContours(image2, cnts, -1, (0, 255, 0), 3)
+cv2.imshow("Top 30 contours", image2)
+cv2.waitKey(0)
+
+NumberPlateCnt = None  # we currently have no Number plate contour
+
+# loop over our contours to find the best possible approximate contour of number plate
+i = 7
+for c in cnts:
+    perimeter = cv2.arcLength(c, True)
+    approx = cv2.approxPolyDP(c, 0.018 * perimeter, True)
+
+    if len(approx) == 4:  # Select the contour with 4 corners
+        NumberPlateCnt = approx  # This is our approx Number Plate Contour
         break
 
+if NumberPlateCnt is None:
+    lp_detected = False
+    print("Couldn't detect LP (No contours)")
+else:
+    lp_detected = True  # LP detected
 
-# When everything done, release the video capture object
-cap.release()
+if lp_detected == True:
+    """
+    Crop those contours and store it in Cropped Images folder
+    """
+    # This will find out coordinates for plate
+    x, y, w, h = cv2.boundingRect(c)
+    # Create new image
+    plate_image = image[y:y+h, x:x+w]
 
-# Closes all the frames
+    # Store new image
+    cv2.imwrite('C:\\Users\\LENOVO\\Documents\\Projects\\AutoVIS\\croppedimages\\' +
+                str(i) + '.png', plate_image)
+
+    # Drawing the selected contours on the original image
+    cv2.drawContours(image, [NumberPlateCnt], -1, (0, 255, 0), 3)
+    cv2.imshow("Image with detected license plate", image)
+    cv2.waitKey(0)
+
+    # Show cropped LP
+    Cropped_loc = './croppedimages/7.png'
+    cv2.imshow("Cropped License Plate", cv2.imread(Cropped_loc))
+    cv2.waitKey(0)
 cv2.destroyAllWindows()
