@@ -1,6 +1,6 @@
 # AutoVIS
 
-A YOLOv5 based Vehicle Type and License Plate Recognition System
+A YOLOv5 and Image-Processing based Vehicle Type and License Plate Recognition System
 
 ## Installation and run
 
