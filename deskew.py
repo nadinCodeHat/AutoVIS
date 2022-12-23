@@ -23,10 +23,10 @@ def compute_skew(src_img):
 
     img = cv2.medianBlur(src_img, 3)
 
-    edges = cv2.Canny(img,  threshold1=30,  threshold2=100,
+    edges = cv2.Canny(img, threshold1=30, threshold2=100,
                       apertureSize=3, L2gradient=True)
-    lines = cv2.HoughLinesP(edges, 1, math.pi/180, 30,
-                            minLineLength=w / 4.0, maxLineGap=h/4.0)
+    lines = cv2.HoughLinesP(edges, 1, math.pi / 180, 30,
+                            minLineLength=w / 4.0, maxLineGap=h / 4.0)
     angle = 0.0
     nlines = lines.size
 
@@ -41,7 +41,7 @@ def compute_skew(src_img):
 
     if cnt == 0:
         return 0.0
-    return (angle / cnt)*180/math.pi
+    return (angle / cnt) * 180 / math.pi
 
 
 def deskew(src_img):
